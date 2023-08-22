@@ -1,0 +1,82 @@
+# Create the recycle bin directory if it doesn't exist
+BIN_DIR="$HOME/bin"
+if [ ! -d "$BIN_DIR" ]; then
+    mkdir "$BIN_DIR"
+fi
+
+# Function to remove files
+remv() {
+    for file in "$@"; do
+        mv "$file" "$BIN_DIR"
+        echo "Moved '$file' to the recycle bin."
+    done
+}
+
+# Function to restore files
+restore() {
+    for file in "$@"; do
+        if [ -e "$BIN_DIR/$file" ]; then
+            mv "$BIN_DIR/$file" .
+            echo "Restored '$file' from the recycle bin."
+        else
+            echo "File '$file' not found in the recycle bin."
+        fi
+    done
+}
+
+# Function to permanently remove files from the recycle bin
+remvp() {
+    for file in "$@"; do
+        if [ -e "$BIN_DIR/$file" ]; then
+            rm "$BIN_DIR/$file"
+            echo "Permanently removed '$file' from the recycle bin."
+        else
+            echo "File '$file' not found in the recycle bin."
+        fi
+    done
+}
+
+# Function to schedule removal after a specific time limit
+schedule_removal() {
+    local time_limit=$1
+    shift
+
+    for file in "$@"; do
+        sleep "$time_limit"
+        remvp "$file"
+    done
+}
+
+# Main script
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 [remv | restore | remvp | schedule_removal] [filename(s)]"
+    exit 1
+fi
+
+command="$1"
+shift
+
+case "$command" in
+    remv)
+        remv "$@"
+        ;;
+    restore)
+        restore "$@"
+        ;;
+    remvp)
+        remvp "$@"
+        ;;
+    schedule_removal)
+        if [ $# -lt 2 ]; then
+            echo "Usage: $0 schedule_removal [time_limit (in seconds)] [filename(s)]"
+            exit 1
+        fi
+        time_limit="$1"
+        shift
+        schedule_removal "$time_limit" "$@"
+        ;;
+    *)
+        echo "Invalid command. Use remv, restore, remvp, or schedule_removal."
+        exit 1
+        ;;
+esac
